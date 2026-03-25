@@ -36,6 +36,11 @@
 - コミットメッセージのTL名、スクリプト内のユーザー名は全て `git config user.name` で動的取得する
 - チーム構成ドキュメントでは `{GitUser}` というプレースホルダーで表記する
 
+## 本日の教訓（2026-03-25）
+- `sync-logs.ps1` の日本語化でBOM問題が再発（PowerShellはBOM付きUTF-8が必要）
+- GeminiへのログはHooksが正常動作して初めて情報同期が完成する
+- `settings.json` はTL承認なしに変更禁止ルールを追加済み
+
 ## 今後の予定
 - 実際のソースコード配置を確認し、`src/` / `services/` などのワークフローを追記
 - CIワークフローの実装と `package.json` / `pyproject.toml` ベースのコマンドを記載

@@ -1,4 +1,4 @@
-# sync-logs.ps1
+﻿# sync-logs.ps1
 # 役割: ~/.claude/projects/ の最新JSONLを .ai/logs/claude_cli/ にコピーし、
 #       Gemini用Markdownサマリーを生成して git commit & push する
 
@@ -14,7 +14,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 # スクリプトの2階層上がリポジトリルート（.ai/scripts/ -> .ai/ -> リポジトリルート）
 $repoRoot = $PSScriptRoot | Split-Path | Split-Path
 
-# ── ステップ1: ~/.claude/projects/ から最新JSONLを取得 ──────────────────
+# ── ステップ1: ~/.claude/projects/ から最新JSONLを取得 ──────────────
 $claudeProjectsDir = Join-Path $HOME ".claude\projects"
 if (-not (Test-Path $claudeProjectsDir)) {
     Write-Error "Claudeプロジェクトディレクトリが見つかりません: $claudeProjectsDir"
@@ -32,7 +32,7 @@ if (-not $jsonl) {
 
 Write-Output "取得元JSONL: $($jsonl.FullName)"
 
-# ── ステップ2: .ai/logs/claude_cli/ にコピー ──────────────────────────
+# ── ステップ2: .ai/logs/claude_cli/ にコピー ──────────────────
 $destDir = Join-Path $repoRoot ".ai\logs\claude_cli"
 if (-not (Test-Path $destDir)) {
     New-Item -ItemType Directory -Path $destDir -Force | Out-Null
@@ -44,7 +44,7 @@ $destJsonl = Join-Path $destDir "$($dateStr)_$($jsonl.Name)"
 Copy-Item -Path $jsonl.FullName -Destination $destJsonl -Force
 Write-Output "コピー完了: $destJsonl"
 
-# ── ステップ3: Gemini用Markdownサマリーを生成 ──────────────────────────
+# ── ステップ3: Gemini用Markdownサマリーを生成 ────────────────
 $mdPath = Join-Path $destDir "$($dateStr)_summary.md"
 $lines = Get-Content -Path $jsonl.FullName -Encoding UTF8 -ErrorAction SilentlyContinue
 
@@ -88,7 +88,7 @@ foreach ($line in $lines) {
 [System.IO.File]::WriteAllLines($mdPath, $mdLines, [System.Text.Encoding]::UTF8)
 Write-Output "Gemini用Markdown生成: $mdPath"
 
-# ── ステップ4: 差分があればgit commit & push ──────────────────────────
+# ── ステップ4: 差分があればgit commit & push ────────────────
 Set-Location $repoRoot
 
 # ?? (未追跡) を除いた変更行のみ取得
