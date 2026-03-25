@@ -59,12 +59,16 @@ $mdLines.Add("")
 foreach ($line in $lines) {
     try {
         $obj = $line | ConvertFrom-Json -ErrorAction Stop
-        $role = if ($obj.role) { $obj.role } else { "unknown" }
+        # Skip non-conversation entries
+        if ($obj.type -notin @("user", "assistant")) { continue }
+        $msg = $obj.message
+        if (-not $msg) { continue }
+        $role = if ($msg.role) { $msg.role } else { $obj.type }
         $text = ""
-        if ($obj.content -is [string]) {
-            $text = $obj.content
-        } elseif ($obj.content -is [array]) {
-            $text = ($obj.content | Where-Object { $_.type -eq "text" } | ForEach-Object { $_.text }) -join ""
+        if ($msg.content -is [string]) {
+            $text = $msg.content
+        } elseif ($msg.content -is [array]) {
+            $text = ($msg.content | Where-Object { $_.type -eq "text" } | ForEach-Object { $_.text }) -join ""
         }
         if ($text) {
             $mdLines.Add("### [$role]")
