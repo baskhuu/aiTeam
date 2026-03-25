@@ -54,3 +54,7 @@
   - プロジェクト履歴は `AITEAM_HISTORY.md` に蓄積する
   - 構造化データは `.ai/aiTeam.db` (SQLite) で管理する
   - 公開リポジトリのため、`.ai/logs/` や `.db` ファイルは Git に含めない (`.gitignore` を遵守)
+
+- 承認ルール（厳守）
+  - `settings.json` への変更提案は実行前に必ず {GitUser} (TL) に確認すること
+  - TLの承認なしに `settings.json` を変更・コミットしないこと
