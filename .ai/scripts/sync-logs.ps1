@@ -1,18 +1,20 @@
-# sync-logs.ps1
-# ~/.claude/projects/ の最新 JSONL を .ai/logs/claude_cli/ にコピーし、
-# Gemini用Markdownを生成して Git コミット＆プッシュする
+﻿# sync-logs.ps1
+# Source: ~/.claude/projects/ -> .ai/logs/claude_cli/ copy + Gemini Markdown generation
 
 param(
     [string]$Version = "0.0.1"
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $repoRoot = $PSScriptRoot | Split-Path | Split-Path
 
-# ── 1. ソース: ~/.claude/projects/ から最新JSONLを取得 ──────────────────
+# Step 1: Get latest JSONL from ~/.claude/projects/
 $claudeProjectsDir = Join-Path $HOME ".claude\projects"
 if (-not (Test-Path $claudeProjectsDir)) {
-    Write-Error "Claude projects ディレクトリが存在しません: $claudeProjectsDir"
+    Write-Error "Claude projects dir not found: $claudeProjectsDir"
     exit 1
 }
 
@@ -21,39 +23,38 @@ $jsonl = Get-ChildItem -Path $claudeProjectsDir -Filter "*.jsonl" -Recurse |
     Select-Object -First 1
 
 if (-not $jsonl) {
-    Write-Error "JSONL ファイルが見つかりません: $claudeProjectsDir"
+    Write-Error "No JSONL found in: $claudeProjectsDir"
     exit 1
 }
 
-Write-Output "ソースJSONL: $($jsonl.FullName)"
+Write-Output "Source JSONL: $($jsonl.FullName)"
 
-# ── 2. コピー先: .ai/logs/claude_cli/ ─────────────────────────────────
+# Step 2: Copy to .ai/logs/claude_cli/
 $destDir = Join-Path $repoRoot ".ai\logs\claude_cli"
 if (-not (Test-Path $destDir)) {
     New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-    Write-Output "作成: $destDir"
+    Write-Output "Created: $destDir"
 }
 
 $dateStr = Get-Date -Format "yyyyMMdd_HHmmss"
 $destJsonl = Join-Path $destDir "$($dateStr)_$($jsonl.Name)"
 Copy-Item -Path $jsonl.FullName -Destination $destJsonl -Force
-Write-Output "コピー完了: $destJsonl"
+Write-Output "Copied: $destJsonl"
 
-# ── 3. Gemini用Markdown生成 ────────────────────────────────────────────
+# Step 3: Generate Gemini Markdown summary
 $mdPath = Join-Path $destDir "$($dateStr)_summary.md"
 $lines = Get-Content -Path $jsonl.FullName -Encoding UTF8 -ErrorAction SilentlyContinue
 
-$mdContent = @"
-# Claude CLI セッションログ - $dateStr
-
-## メタ情報
-- ソース: $($jsonl.FullName)
-- 取得日時: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-- 行数: $($lines.Count)
-
-## セッション内容
-
-"@
+$mdLines = [System.Collections.Generic.List[string]]::new()
+$mdLines.Add("# Claude CLI Session Log - $dateStr")
+$mdLines.Add("")
+$mdLines.Add("## Metadata")
+$mdLines.Add("- Source: $($jsonl.FullName)")
+$mdLines.Add("- Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
+$mdLines.Add("- Lines: $($lines.Count)")
+$mdLines.Add("")
+$mdLines.Add("## Session Content")
+$mdLines.Add("")
 
 foreach ($line in $lines) {
     try {
@@ -66,32 +67,37 @@ foreach ($line in $lines) {
             $text = ($obj.content | Where-Object { $_.type -eq "text" } | ForEach-Object { $_.text }) -join ""
         }
         if ($text) {
-            $mdContent += "### [$role]`n$text`n`n"
+            $mdLines.Add("### [$role]")
+            $mdLines.Add($text)
+            $mdLines.Add("")
         }
     } catch {
-        # パースできない行はスキップ
+        # Skip unparseable lines
     }
 }
 
-$mdContent | Out-File -FilePath $mdPath -Encoding UTF8 -Force
-Write-Output "Gemini用Markdown生成: $mdPath"
+[System.IO.File]::WriteAllLines($mdPath, $mdLines, [System.Text.Encoding]::UTF8)
+Write-Output "Gemini Markdown: $mdPath"
 
-# ── 4. コミット連番を取得 ──────────────────────────────────────────────
+# Step 4: Git commit if there are tracked changes (logs are gitignored - local only)
 Set-Location $repoRoot
 
-$commitCount = (git rev-list --count HEAD 2>$null)
-if (-not $commitCount) { $commitCount = 0 }
-$serial = "{0:D4}" -f ([int]$commitCount + 1)
+$staged = git status --porcelain 2>$null | Where-Object { $_ -notmatch "^\?\?" }
+if ($staged) {
+    $commitCount = (git rev-list --count HEAD 2>$null)
+    if (-not $commitCount) { $commitCount = 0 }
+    $serial = "{0:D4}" -f ([int]$commitCount + 1)
+    $commitMsg = "v$Version - $serial" + ": [Claude] sync-logs $dateStr"
 
-# ── 5. git add / commit / push ────────────────────────────────────────
-$commitMsg = "v$Version - $serial`: [Claude] ログ同期 $dateStr"
-
-try {
-    git add "$destJsonl" "$mdPath"
+    git add -u
     git commit -m $commitMsg
     git push
-    Write-Output "Git push 完了: $commitMsg"
-} catch {
-    Write-Error "Git操作に失敗しました: $_"
-    exit 1
+    Write-Output "Git push done: $commitMsg"
+} else {
+    Write-Output "Git: nothing to commit (logs are gitignored - saved locally only)"
 }
+
+Write-Output ""
+Write-Output "=== Sync complete ==="
+Write-Output "JSONL    : $destJsonl"
+Write-Output "Markdown : $mdPath"
