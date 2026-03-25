@@ -39,15 +39,21 @@
   - What CI/CD steps are missing in the instructions?
 
 ## aiTeam プロジェクト開発規約
-- チーム構成
-  - {GitUser} (TL): 最終決定権者（git config user.name のユーザーが担当）
-  - Claude Code CLI: 実装・コーディング担当
-  - Claude (claude.ai): 設計・アーキテクチャ・検証担当
-  - Gemini: 監査・履歴管理担当
+- チーム構成と役割分担（厳守）
+  - {GitUser} (TL): 最終決定権者
+  - Claude Code CLI: ファイル編集・コミット・push を実行する唯一の担当
+  - Claude (claude.ai): 設計・アーキテクチャ・検証担当（提案のみ、編集不可）
+  - Gemini: 監査・履歴管理担当（参照のみ、編集不可）
+
+- Geminiの行動ルール（厳守）
+  - リポジトリのファイルはREAD ONLYで参照すること
+  - 提案・意見はチャットのみで行い、ファイルの直接編集は禁止
+  - ファイル編集が必要な場合はチャットで提案し、TL承認後にClaude Code CLIが実施する
 
 - コミットメッセージ規則（厳守）
   - `v[バージョン] - [4桁連番]: [[担当名]] [内容]`
-  - 例: `v0.0.1 - 0001: [Gemini] 初期設定ファイルの生成`
+  - 担当名は固定: `[Claude]`（Claude Code CLI自動）/ `[{GitUser}]`（TL手動）/ `[Gemini]`（将来対応）
+  - 例: `v0.0.1 - 0001: [Claude] sync-logs.ps1修正`
 
 - 運用ルール
   - ログは `.ai/logs/` に保存する
@@ -56,5 +62,5 @@
   - 公開リポジトリのため、`.ai/logs/` や `.db` ファイルは Git に含めない (`.gitignore` を遵守)
 
 - 承認ルール（厳守）
-  - `settings.json` への変更提案は実行前に必ず {GitUser} (TL) に確認すること
-  - TLの承認なしに `settings.json` を変更・コミットしないこと
+  - スクリプト・設定・ドキュメント問わず、全ファイルの変更は実行前に必ず {GitUser} (TL) に確認すること
+  - TLの承認なしにいかなるファイルも変更・コミット・pushしないこと
