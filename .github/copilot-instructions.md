@@ -40,7 +40,7 @@
 
 ## aiTeam プロジェクト開発規約
 - チーム構成
-  - baskhuu (TL): 最終決定権者
+  - {GitUser} (TL): 最終決定権者（git config user.name のユーザーが担当）
   - Claude Code CLI: 実装・コーディング担当
   - Claude (claude.ai): 設計・アーキテクチャ・検証担当
   - Gemini: 監査・履歴管理担当

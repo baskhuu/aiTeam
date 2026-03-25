@@ -31,6 +31,11 @@
 - Hooksによる自動同期の実運用確認（セッション終了時に自動実行されるか）
 - `package.json` 作成（npm scripts経由でsync-logsを呼び出せるように）
 
+## 確定ルール（2026-03-25）
+- TL名は `git config user.name` を使用する（固有名詞をコードに直接書かない）
+- コミットメッセージのTL名、スクリプト内のユーザー名は全て `git config user.name` で動的取得する
+- チーム構成ドキュメントでは `{GitUser}` というプレースホルダーで表記する
+
 ## 今後の予定
 - 実際のソースコード配置を確認し、`src/` / `services/` などのワークフローを追記
 - CIワークフローの実装と `package.json` / `pyproject.toml` ベースのコマンドを記載

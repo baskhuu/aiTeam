@@ -91,7 +91,8 @@ if ($staged) {
     $commitCount = (git rev-list --count HEAD 2>$null)
     if (-not $commitCount) { $commitCount = 0 }
     $serial = "{0:D4}" -f ([int]$commitCount + 1)
-    $commitMsg = "v$Version - $serial" + ": [Claude] sync-logs $dateStr"
+    $gitUser = git config user.name
+    $commitMsg = "v$Version - $serial`: [$gitUser] ログ同期 $dateStr"
 
     git add -u
     git commit -m $commitMsg
