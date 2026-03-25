@@ -88,6 +88,27 @@ foreach ($line in $lines) {
 [System.IO.File]::WriteAllLines($mdPath, $mdLines, [System.Text.Encoding]::UTF8)
 Write-Output "Gemini用Markdown生成: $mdPath"
 
+# ── ステップ3.5: AITEAM_HISTORY.md に要約追記 ───────────────
+$historyPath = Join-Path $repoRoot "AITEAM_HISTORY.md"
+if (-not (Test-Path $historyPath)) {
+    New-Item -ItemType File -Path $historyPath -Force | Out-Null
+}
+
+# セッション内容の要約（最初のuser/assistant発話を取得）
+$summaryBlocks = $mdLines | Select-String -Pattern '^### \[' | Select-Object -First 2
+$summarySnippet = if ($summaryBlocks) { ($summaryBlocks | ForEach-Object { $_.Line }) -join ' | ' } else { '内容なし' }
+
+$historyEntry = @(
+    "## セッション $dateStr",
+    "- JSONL: $($jsonl.Name)",
+    "- 生成日時: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
+    "- 行数: $($lines.Count)",
+    "- サマリー: $summarySnippet",
+    ""
+)
+Add-Content -Path $historyPath -Value $historyEntry -Encoding UTF8
+Write-Output "AITEAM_HISTORYに追記: $historyPath"
+
 # ── ステップ4: 差分があればgit commit & push ────────────────
 Set-Location $repoRoot
 
