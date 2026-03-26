@@ -14,18 +14,32 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 # スクリプトの2階層上がリポジトリルート（.ai/scripts/ -> .ai/ -> リポジトリルート）
 $repoRoot = $PSScriptRoot | Split-Path | Split-Path
 
-# ── バージョン管理: .ai/VERSION ファイルから読み込む ──────────────
+# ── バージョン・連番管理: .ai/VERSION から読み込む ──────────────
+# フォーマット:
+#   1行目: バージョン番号 (例: 0.0.1)
+#   2行目: 最後に使った連番 (例: 0032) ← git履歴に依存しない自己完結型
 $versionFile = Join-Path $repoRoot ".ai\VERSION"
-if (-not $Version) {
-    if (Test-Path $versionFile) {
-        $Version = (Get-Content $versionFile -Encoding UTF8 -Raw).Trim()
-        Write-Output "バージョン読み込み: v$Version (.ai/VERSION)"
-    } else {
-        $Version = "0.0.1"
-        Write-Warning ".ai/VERSION が見つかりません。デフォルト v$Version を使用します。"
-    }
+if (Test-Path $versionFile) {
+    $versionLines = Get-Content $versionFile -Encoding UTF8
+    $fileVersion  = if ($versionLines.Count -ge 1) { $versionLines[0].Trim() } else { "0.0.1" }
+    $lastSerial   = if ($versionLines.Count -ge 2) { [int]$versionLines[1].Trim() } else { 0 }
 } else {
-    Write-Output "バージョン上書き: v$Version (パラメータ指定)"
+    Write-Warning ".ai/VERSION が見つかりません。デフォルト値を使用します。"
+    $fileVersion = "0.0.1"
+    $lastSerial  = 0
+}
+
+if (-not $Version) {
+    $Version = $fileVersion
+    Write-Output "バージョン読み込み: v$Version (連番: $lastSerial → $($lastSerial + 1))"
+} else {
+    # TLがパラメータで明示指定した場合（バージョンアップ時など）
+    if ($Version -ne $fileVersion) {
+        Write-Output "バージョン変更: v$fileVersion → v$Version → 連番を0001にリセット"
+        $lastSerial = 0
+    } else {
+        Write-Output "バージョン上書き: v$Version (パラメータ指定)"
+    }
 }
 
 # ── ステップ1: ~/.claude/projects/ から最新JSONLを取得 ──────────────
@@ -149,19 +163,17 @@ Set-Location $repoRoot
 # ?? (未追跡) を除いた変更行のみ取得
 $staged = git status --porcelain 2>$null | Where-Object { $_ -notmatch "^\?\?" }
 if ($staged) {
-    # 直前コミットのバージョンが一致する場合のみ連番を継続、違う場合は0001にリセット
-    $lastMsg = git log -1 --format="%s" 2>$null
-    $serialNum = 0
-    if ($lastMsg -match "^v$([regex]::Escape($Version)) - (\d{4}):") {
-        $serialNum = [int]$Matches[1]
-    } else {
-        Write-Output "バージョン変更を検出 → 連番を0001にリセット"
-    }
-    $serial = "{0:D4}" -f ($serialNum + 1)
+    $newSerial = $lastSerial + 1
+    $serial    = "{0:D4}" -f $newSerial
     $commitMsg = "v$Version - $serial`: [Claude] ログ同期 $dateStr"
+
+    # .ai/VERSION の連番を更新（git履歴に依存しない自己完結型カウンター）
+    $newVersionContent = "$Version`n$("{0:D4}" -f $newSerial)`n"
+    [System.IO.File]::WriteAllText($versionFile, $newVersionContent, [System.Text.Encoding]::UTF8)
 
     git add -u
     git add ".ai/AITEAM_HISTORY.md"
+    git add ".ai/VERSION"
     git commit -m $commitMsg
     git push
     Write-Output "Git push完了: $commitMsg"
