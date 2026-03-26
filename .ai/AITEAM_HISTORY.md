@@ -71,6 +71,7 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 
 ---
 
+
 ### 課題・TODO
 
 - [x] `sync-logs.ps1` に `AITEAM_HISTORY.md` へのサマリー自動追記機能を追加（0020完了）
@@ -138,6 +139,11 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 - `npm run gemini-log` コマンド追加（`package.json`）
 - `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
 - Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
+
+#### 0044 — スクリプト【高】バグ3件修正（Claude）
+- `sync-logs.js`: `catch{}` → `catch(e)` に変更し、パース失敗行を警告表示（ログロス防止）
+- `gemini-log.js`: `appendToHistory()` でTODOセクション直前に挿入するよう修正（`marker`変数を実際に使用）
+- `gemini-log.js`: DB記録とファイル書き込みの整合性保証（失敗時はDBレコードをロールバック）
 
 ---
 

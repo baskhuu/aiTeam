@@ -81,7 +81,9 @@ function parseJsonl(content) {
                 firstMessage = msg.content.find(c => c.type === 'text')?.text?.trim() || '';
             }
             if (firstMessage) break;
-        } catch {}
+        } catch (e) {
+            console.warn(`行パース失敗（スキップ）: ${line.substring(0, 80)}`);
+        }
     }
     return { lines, firstMessage };
 }
@@ -111,7 +113,9 @@ function buildSummary(jsonlPath, dateStr, lines) {
             else if (Array.isArray(msg.content))
                 text = msg.content.filter(c => c.type === 'text').map(c => c.text).join('');
             if (text.trim()) { parts.push(`### [${role}]`); parts.push(text.trim()); parts.push(''); }
-        } catch {}
+        } catch (e) {
+            console.warn(`サマリー生成スキップ: ${line.substring(0, 80)}`);
+        }
     }
     return parts.join('\n');
 }

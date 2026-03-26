@@ -59,14 +59,22 @@ function listDecisions(db) {
 // ── AITEAM_HISTORY.md へ追記 ──────────────────────────────
 function appendToHistory(category, content, createdAt) {
     const fs = require('fs');
-    if (!fs.existsSync(historyPath)) return;
+    if (!fs.existsSync(historyPath)) {
+        throw new Error(`AITEAM_HISTORY.md が見つかりません: ${historyPath}`);
+    }
 
     const entry = `\n### [Gemini決定] ${createdAt} (${category})\n- ${content}\n`;
     const marker = '### 課題・TODO';
     const historyContent = fs.readFileSync(historyPath, 'utf8');
 
-    // 末尾に追記（TODOセクションより前にあれば末尾へ）
-    const updated = historyContent + entry;
+    // TODOセクションの直前に挿入（存在しない場合は末尾に追記）
+    const markerIndex = historyContent.indexOf(marker);
+    let updated;
+    if (markerIndex >= 0) {
+        updated = historyContent.substring(0, markerIndex) + entry + historyContent.substring(markerIndex);
+    } else {
+        updated = historyContent + entry;
+    }
     fs.writeFileSync(historyPath, updated, 'utf8');
     console.log('AITEAM_HISTORY.md に追記しました');
 }
@@ -92,19 +100,43 @@ function main() {
         process.exit(1);
     }
 
-    const result = db.prepare(`
-        INSERT INTO gemini_decisions (category, content, status, implemented_commit)
-        VALUES (?, ?, ?, ?)
-    `).run(opts.category, opts.content, opts.status, opts.commit || null);
+    // AITEAM_HISTORY.md への書き込みが必要な場合、DB記録前に検証
+    const needsHistory = ['approval', 'architecture', 'rule'].includes(opts.category);
+    if (needsHistory) {
+        const fs = require('fs');
+        if (!fs.existsSync(historyPath)) {
+            console.error(`エラー: AITEAM_HISTORY.md が見つかりません: ${historyPath}`);
+            db.close();
+            process.exit(1);
+        }
+    }
 
+    const insertDecision = db.transaction(() => {
+        const result = db.prepare(`
+            INSERT INTO gemini_decisions (category, content, status, implemented_commit)
+            VALUES (?, ?, ?, ?)
+        `).run(opts.category, opts.content, opts.status, opts.commit || null);
+        return result;
+    });
+
+    const result = insertDecision();
     const row = db.prepare('SELECT created_at FROM gemini_decisions WHERE id = ?').get(result.lastInsertRowid);
+
+    // 重要カテゴリは AITEAM_HISTORY.md にも追記（失敗時はDBレコードを削除してロールバック）
+    if (needsHistory) {
+        try {
+            appendToHistory(opts.category, opts.content, row.created_at);
+        } catch (e) {
+            db.prepare('DELETE FROM gemini_decisions WHERE id = ?').run(result.lastInsertRowid);
+            db.close();
+            console.error(`エラー: AITEAM_HISTORY.md への追記に失敗しました。DB記録を取り消しました。`);
+            console.error(e.message);
+            process.exit(1);
+        }
+    }
+
     console.log(`記録しました [id=${result.lastInsertRowid}] [${opts.category}] [${opts.status}]`);
     console.log(`内容: ${opts.content}`);
-
-    // 重要カテゴリは AITEAM_HISTORY.md にも追記
-    if (['approval', 'architecture', 'rule'].includes(opts.category)) {
-        appendToHistory(opts.category, opts.content, row.created_at);
-    }
 
     db.close();
 }
