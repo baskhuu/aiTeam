@@ -140,6 +140,13 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 - `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
 - Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
 
+#### 0049 — setup-project.js セットアップ自動化強化（Claude）
+- `npm install` を `node_modules` が存在しない場合のみ自動実行（条件付き実行）
+- `CLAUDE.md` / `copilot-instructions.md` をセクション単位でマージする方式に変更
+  - ファイルが存在しない場合: 新規作成
+  - ファイルが存在する場合: 既存セクションは保持、新規セクション（`##` ヘッダー）のみ追記
+  - aiTeam 更新時に `npx github:baskhuu/aiTeam` を再実行するだけで差分が反映される
+
 #### 0048 — better-sqlite3 → sql.js に移行（Claude）
 - ネイティブコンパイル不要の `sql.js`（WebAssembly）に切り替え
 - Docker・任意OS・任意Node.jsバージョンで `npm install` が一発で通るようになった
