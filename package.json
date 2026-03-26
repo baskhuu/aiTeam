@@ -1,0 +1,11 @@
+{
+  "name": "aiteam",
+  "version": "1.0.0",
+  "description": "AI team collaboration tool",
+  "scripts": {
+    "sync": "node .ai/scripts/sync-logs.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0"
+  }
+}
