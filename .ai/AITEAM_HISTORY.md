@@ -140,6 +140,10 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 - `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
 - Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
 
+#### 0046 — ドキュメント【低】表記不整合2件修正（Claude）
+- `README.md`: 固有名（バスフー）と `{TL}` プレースホルダーを `{GitUser}` に統一
+- `copilot-instructions.md`: コミット形式 `[[担当名]] [内容]` → `[担当名] 内容` に修正（CLAUDE.md と一致）
+
 #### 0045 — スクリプト【中】問題3件修正（Claude）
 - `migrate-logs.js`: `--delete` 実行に `--confirm` フラグが必須となり誤削除防止
 - `sync-logs.js`: mtime 同一時のソートを `localeCompare` で安定化（並列セッション対応）

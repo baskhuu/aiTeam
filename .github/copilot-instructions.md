@@ -51,7 +51,7 @@
   - ファイル編集が必要な場合はチャットで提案し、TL承認後にClaude Code CLIが実施する
 
 - コミットメッセージ規則（厳守）
-  - `[[担当名]] [内容]`
+  - `[担当名] 内容`
   - 担当名は固定: `[Claude]`（Claude Code CLI自動）/ `[{GitUser}]`（TL手動）
   - 例: `[Claude] sync-logs.ps1修正`
 
