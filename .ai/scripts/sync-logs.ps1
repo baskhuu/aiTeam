@@ -135,9 +135,13 @@ Set-Location $repoRoot
 # ?? (未追跡) を除いた変更行のみ取得
 $staged = git status --porcelain 2>$null | Where-Object { $_ -notmatch "^\?\?" }
 if ($staged) {
-    $commitCount = (git rev-list --count HEAD 2>$null)
-    if (-not $commitCount) { $commitCount = 0 }
-    $serial = "{0:D4}" -f ([int]$commitCount + 1)
+    # 直前コミットメッセージから連番を抽出して+1（重複防止）
+    $lastMsg = git log -1 --format="%s" 2>$null
+    $serialNum = 0
+    if ($lastMsg -match "- (\d{4}):") {
+        $serialNum = [int]$Matches[1]
+    }
+    $serial = "{0:D4}" -f ($serialNum + 1)
     $commitMsg = "v$Version - $serial`: [Claude] ログ同期 $dateStr"
 
     git add -u
