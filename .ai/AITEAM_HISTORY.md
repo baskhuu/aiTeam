@@ -140,6 +140,15 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 - `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
 - Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
 
+#### 0047 — npm パッケージ化・他プロジェクト導入機能（Claude）
+- `.ai/scripts/setup-project.js` 新規作成（`npx aiteam` で実行するセットアップCLI）
+  - 必要ファイルをコピー（CLAUDE.md / スクリプト群 / copilot-instructions.md）
+  - 対象の `package.json` に aiTeam スクリプトと `better-sqlite3` 依存を自動追記
+  - `.gitignore` に aiTeam 除外ルールを追記
+  - 既存ファイルはスキップ（上書きしない）
+- `package.json` に `bin` / `files` / `repository` を追加（npm パッケージ形式に整備）
+- 導入方法: `npx github:baskhuu/aiTeam`
+
 #### 0046 — ドキュメント【低】表記不整合2件修正（Claude）
 - `README.md`: 固有名（バスフー）と `{TL}` プレースホルダーを `{GitUser}` に統一
 - `copilot-instructions.md`: コミット形式 `[[担当名]] [内容]` → `[担当名] 内容` に修正（CLAUDE.md と一致）

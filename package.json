@@ -1,7 +1,19 @@
 {
   "name": "aiteam",
   "version": "1.0.0",
-  "description": "AI team collaboration tool",
+  "description": "AI team collaboration tool for Claude, Gemini, and human TL",
+  "bin": {
+    "aiteam": ".ai/scripts/setup-project.js"
+  },
+  "files": [
+    ".ai/scripts/sync-logs.js",
+    ".ai/scripts/gemini-log.js",
+    ".ai/scripts/migrate-logs.js",
+    ".ai/scripts/setup-project.js",
+    "CLAUDE.md",
+    ".env.example",
+    ".github/copilot-instructions.md"
+  ],
   "scripts": {
     "sync": "node .ai/scripts/sync-logs.js",
     "gemini-log": "node .ai/scripts/gemini-log.js",
@@ -9,5 +21,10 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/baskhuu/aiTeam.git"
+  },
+  "license": "MIT"
 }
