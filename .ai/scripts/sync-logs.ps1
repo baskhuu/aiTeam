@@ -88,6 +88,47 @@ foreach ($line in $lines) {
 [System.IO.File]::WriteAllLines($mdPath, $mdLines, [System.Text.Encoding]::UTF8)
 Write-Output "Gemini用Markdown生成: $mdPath"
 
+# ── ステップ5: AITEAM_HISTORY.md にセッションサマリーを追記 ──────
+$historyPath = Join-Path $repoRoot ".ai\AITEAM_HISTORY.md"
+if (Test-Path $historyPath) {
+    # 最初のユーザーメッセージを取得（セッション概要として）
+    $firstUserMsg = ""
+    foreach ($line in $lines) {
+        try {
+            $obj = $line | ConvertFrom-Json -ErrorAction Stop
+            if ($obj.type -eq "user") {
+                $msg = $obj.message
+                if ($msg -and $msg.content) {
+                    if ($msg.content -is [string]) {
+                        $firstUserMsg = $msg.content.Trim()
+                    } elseif ($msg.content -is [array]) {
+                        $firstUserMsg = ($msg.content | Where-Object { $_.type -eq "text" } | Select-Object -First 1).text
+                        if ($firstUserMsg) { $firstUserMsg = $firstUserMsg.Trim() }
+                    }
+                    if ($firstUserMsg) { break }
+                }
+            }
+        } catch {}
+    }
+    if ($firstUserMsg.Length -gt 80) {
+        $firstUserMsg = $firstUserMsg.Substring(0, 80) + "..."
+    }
+
+    $today = Get-Date -Format "yyyy-MM-dd"
+    $historyContent = Get-Content -Path $historyPath -Raw -Encoding UTF8
+
+    # 日付セクションが未存在なら追加
+    $dateSectionHeader = "## $today — セッションログ"
+    if ($historyContent -notmatch [regex]::Escape($dateSectionHeader)) {
+        $newSection = "`n---`n`n$dateSectionHeader`n"
+        [System.IO.File]::AppendAllText($historyPath, $newSection, [System.Text.Encoding]::UTF8)
+    }
+
+    $sessionEntry = "`n- ``$dateStr`` [サマリー](.ai/logs/claude_cli/$($dateStr)_summary.md) — $firstUserMsg"
+    [System.IO.File]::AppendAllText($historyPath, $sessionEntry, [System.Text.Encoding]::UTF8)
+    Write-Output "AITEAM_HISTORY.md に追記: $dateStr"
+}
+
 # ── ステップ4: 差分があればgit commit & push ────────────────
 Set-Location $repoRoot
 
@@ -100,6 +141,7 @@ if ($staged) {
     $commitMsg = "v$Version - $serial`: [Claude] ログ同期 $dateStr"
 
     git add -u
+    git add ".ai/AITEAM_HISTORY.md"
     git commit -m $commitMsg
     git push
     Write-Output "Git push完了: $commitMsg"
@@ -111,3 +153,4 @@ Write-Output ""
 Write-Output "=== 同期完了 ==="
 Write-Output "JSONL      : $destJsonl"
 Write-Output "Markdown   : $mdPath"
+Write-Output "HISTORY    : $historyPath"
