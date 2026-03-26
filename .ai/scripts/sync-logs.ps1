@@ -163,7 +163,13 @@ Set-Location $repoRoot
 # ?? (未追跡) を除いた変更行のみ取得
 $staged = git status --porcelain 2>$null | Where-Object { $_ -notmatch "^\?\?" }
 if ($staged) {
-    $newSerial = $lastSerial + 1
+    # VERSIONとgit履歴の両方をチェックし大きい方+1を使用（手動コミット後の重複防止）
+    $lastMsg = git log -1 --format="%s" 2>$null
+    $gitSerial = 0
+    if ($lastMsg -match "^v$([regex]::Escape($Version)) - (\d{4}):") {
+        $gitSerial = [int]$Matches[1]
+    }
+    $newSerial = ([Math]::Max($lastSerial, $gitSerial)) + 1
     $serial    = "{0:D4}" -f $newSerial
     $commitMsg = "v$Version - $serial`: [Claude] ログ同期 $dateStr"
 
