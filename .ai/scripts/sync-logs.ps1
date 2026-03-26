@@ -3,7 +3,7 @@
 #       Gemini用Markdownサマリーを生成して git commit & push する
 
 param(
-    [string]$Version = "0.0.1"
+    [string]$Version = ""   # 空の場合は .ai/VERSION から自動読み込み（TLが明示指定した場合のみ上書き）
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +13,20 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # スクリプトの2階層上がリポジトリルート（.ai/scripts/ -> .ai/ -> リポジトリルート）
 $repoRoot = $PSScriptRoot | Split-Path | Split-Path
+
+# ── バージョン管理: .ai/VERSION ファイルから読み込む ──────────────
+$versionFile = Join-Path $repoRoot ".ai\VERSION"
+if (-not $Version) {
+    if (Test-Path $versionFile) {
+        $Version = (Get-Content $versionFile -Encoding UTF8 -Raw).Trim()
+        Write-Output "バージョン読み込み: v$Version (.ai/VERSION)"
+    } else {
+        $Version = "0.0.1"
+        Write-Warning ".ai/VERSION が見つかりません。デフォルト v$Version を使用します。"
+    }
+} else {
+    Write-Output "バージョン上書き: v$Version (パラメータ指定)"
+}
 
 # ── ステップ1: ~/.claude/projects/ から最新JSONLを取得 ──────────────
 $claudeProjectsDir = Join-Path $HOME ".claude\projects"
@@ -135,11 +149,13 @@ Set-Location $repoRoot
 # ?? (未追跡) を除いた変更行のみ取得
 $staged = git status --porcelain 2>$null | Where-Object { $_ -notmatch "^\?\?" }
 if ($staged) {
-    # 直前コミットメッセージから連番を抽出して+1（重複防止）
+    # 直前コミットのバージョンが一致する場合のみ連番を継続、違う場合は0001にリセット
     $lastMsg = git log -1 --format="%s" 2>$null
     $serialNum = 0
-    if ($lastMsg -match "- (\d{4}):") {
+    if ($lastMsg -match "^v$([regex]::Escape($Version)) - (\d{4}):") {
         $serialNum = [int]$Matches[1]
+    } else {
+        Write-Output "バージョン変更を検出 → 連番を0001にリセット"
     }
     $serial = "{0:D4}" -f ($serialNum + 1)
     $commitMsg = "v$Version - $serial`: [Claude] ログ同期 $dateStr"
