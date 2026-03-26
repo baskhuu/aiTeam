@@ -10,7 +10,7 @@ AIと人間が協調して開発を進めるためのチーム開発支援ツー
 ## チーム構成
 | メンバー | 役割 |
 |---------|------|
-| baskhuu (TL) | 最終決定権者 |
+| {TL} (あなた) | 最終決定権者 ※ `git config user.name` の値 |
 | Claude Code CLI | 実装・コーディング担当 |
 | Claude (claude.ai) | 設計・アーキテクチャ・検証担当 |
 | Gemini | 監査・履歴管理担当 |
@@ -47,7 +47,7 @@ Stop-Transcript
 ## コミットメッセージ規則
 ```
 [担当名] 内容
-例: [baskhuu] 初期リポジトリ構成
+例: [{TL}] 初期リポジトリ構成
     [Claude] .gitignore修正
 ```
 
