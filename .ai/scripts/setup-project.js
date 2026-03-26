@@ -69,8 +69,8 @@ for (const [key, val] of Object.entries(aiScripts)) {
 }
 
 pkg.dependencies = pkg.dependencies || {};
-if (!pkg.dependencies['better-sqlite3']) {
-    pkg.dependencies['better-sqlite3'] = '^12.8.0';
+if (!pkg.dependencies['sql.js']) {
+    pkg.dependencies['sql.js'] = '^1.12.0';
 }
 
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');

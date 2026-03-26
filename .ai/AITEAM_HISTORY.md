@@ -140,6 +140,13 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 - `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
 - Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
 
+#### 0048 — better-sqlite3 → sql.js に移行（Claude）
+- ネイティブコンパイル不要の `sql.js`（WebAssembly）に切り替え
+- Docker・任意OS・任意Node.jsバージョンで `npm install` が一発で通るようになった
+- `sync-logs.js` / `gemini-log.js` / `migrate-logs.js` の DB API を全て書き換え
+- `package.json` / `setup-project.js` の依存も `sql.js ^1.12.0` に変更
+- 既存の `aiteam.db` はSQLite標準形式のため移行不要
+
 #### 0047 — npm パッケージ化・他プロジェクト導入機能（Claude）
 - `.ai/scripts/setup-project.js` 新規作成（`npx aiteam` で実行するセットアップCLI）
   - 必要ファイルをコピー（CLAUDE.md / スクリプト群 / copilot-instructions.md）

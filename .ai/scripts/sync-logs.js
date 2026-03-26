@@ -2,7 +2,7 @@
 // 役割: ~/.claude/projects/ の最新JSONLを読み取り、内容をすべて aiteam.db に保存する
 //       ファイルへの書き出しは行わない / git commitは行わない
 
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -30,9 +30,19 @@ function findLatestJsonl() {
     return files[0]?.path || null;
 }
 
+// ── DB ロード／セーブ ─────────────────────────────────────
+function loadDb(SQL) {
+    if (fs.existsSync(dbPath)) return new SQL.Database(fs.readFileSync(dbPath));
+    return new SQL.Database();
+}
+
+function saveDb(db) {
+    fs.writeFileSync(dbPath, Buffer.from(db.export()));
+}
+
 // ── SQLite初期化 ─────────────────────────────────────────
 function initDb(db) {
-    db.exec(`
+    db.run(`
         CREATE TABLE IF NOT EXISTS sessions (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id    TEXT,
@@ -47,13 +57,13 @@ function initDb(db) {
             file_hash     TEXT
         )
     `);
-    // 既存DBへのカラム追加（冪等）
-    const cols = db.prepare('PRAGMA table_info(sessions)').all().map(r => r.name);
-    if (!cols.includes('jsonl_content')) db.exec('ALTER TABLE sessions ADD COLUMN jsonl_content TEXT');
-    if (!cols.includes('summary_md'))    db.exec('ALTER TABLE sessions ADD COLUMN summary_md TEXT');
-    if (!cols.includes('file_hash'))     db.exec('ALTER TABLE sessions ADD COLUMN file_hash TEXT');
+    const colResult = db.exec('PRAGMA table_info(sessions)');
+    const cols = colResult.length > 0 ? colResult[0].values.map(r => r[1]) : [];
+    if (!cols.includes('jsonl_content')) db.run('ALTER TABLE sessions ADD COLUMN jsonl_content TEXT');
+    if (!cols.includes('summary_md'))    db.run('ALTER TABLE sessions ADD COLUMN summary_md TEXT');
+    if (!cols.includes('file_hash'))     db.run('ALTER TABLE sessions ADD COLUMN file_hash TEXT');
 
-    db.exec(`
+    db.run(`
         CREATE TABLE IF NOT EXISTS gemini_decisions (
             id                 INTEGER PRIMARY KEY AUTOINCREMENT,
             category           TEXT,
@@ -121,7 +131,7 @@ function buildSummary(jsonlPath, dateStr, lines) {
 }
 
 // ── メイン ───────────────────────────────────────────────
-function main() {
+async function main() {
     // 1. 最新JSONL取得
     const jsonlPath = findLatestJsonl();
     if (!jsonlPath) {
@@ -142,11 +152,15 @@ function main() {
     const sessionId = path.basename(jsonlPath, '.jsonl');
 
     // 4. DB初期化
-    const db = new Database(dbPath);
+    const SQL = await initSqlJs();
+    const db = loadDb(SQL);
     initDb(db);
 
-    // 5. 重複チェック（同一セッション・同一内容なら記録しない）
-    const exists = db.prepare('SELECT id FROM sessions WHERE file_hash = ?').get(fileHash);
+    // 5. 重複チェック
+    const stmt = db.prepare('SELECT id FROM sessions WHERE file_hash = ?');
+    stmt.bind([fileHash]);
+    const exists = stmt.step();
+    stmt.free();
     if (exists) {
         console.log('変更なし（同一ハッシュ）、スキップします');
         db.close();
@@ -156,14 +170,17 @@ function main() {
     // 6. パース
     const { lines, firstMessage } = parseJsonl(jsonlContent);
 
-    // 7. MDサマリー生成（文字列）
+    // 7. MDサマリー生成
     const summaryMd = buildSummary(jsonlPath, dateStr, lines);
 
-    // 8. SQLiteに保存（全コンテンツ込み）
-    db.prepare(`
-        INSERT INTO sessions (session_id, date, timestamp, jsonl_source, first_message, line_count, jsonl_content, summary_md, file_hash)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(sessionId, date, dateStr, jsonlPath, firstMessage.substring(0, 200), lines.length, jsonlContent, summaryMd, fileHash);
+    // 8. SQLiteに保存
+    db.run(
+        `INSERT INTO sessions (session_id, date, timestamp, jsonl_source, first_message, line_count, jsonl_content, summary_md, file_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [sessionId, date, dateStr, jsonlPath, firstMessage.substring(0, 200), lines.length, jsonlContent, summaryMd, fileHash]
+    );
+
+    saveDb(db);
     db.close();
 
     console.log('');
@@ -173,4 +190,4 @@ function main() {
     console.log('冒頭   :', firstMessage.substring(0, 60));
 }
 
-main();
+main().catch(e => { console.error(e); process.exit(1); });

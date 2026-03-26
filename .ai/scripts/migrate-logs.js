@@ -3,7 +3,7 @@
 // 使い方: npm run migrate-logs
 //         npm run migrate-logs -- --delete --confirm  ← 移行後にファイルを削除（--confirm 必須）
 
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -15,9 +15,19 @@ const logsDir  = path.join(repoRoot, '.ai', 'logs', 'claude_cli');
 const doDelete  = process.argv.includes('--delete');
 const doConfirm = process.argv.includes('--confirm');
 
+// ── DB ロード／セーブ ─────────────────────────────────────
+function loadDb(SQL) {
+    if (fs.existsSync(dbPath)) return new SQL.Database(fs.readFileSync(dbPath));
+    return new SQL.Database();
+}
+
+function saveDb(db) {
+    fs.writeFileSync(dbPath, Buffer.from(db.export()));
+}
+
 // ── スキーマ確保 ──────────────────────────────────────────
 function ensureSchema(db) {
-    db.exec(`
+    db.run(`
         CREATE TABLE IF NOT EXISTS sessions (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id    TEXT,
@@ -32,10 +42,11 @@ function ensureSchema(db) {
             file_hash     TEXT
         )
     `);
-    const cols = db.prepare('PRAGMA table_info(sessions)').all().map(r => r.name);
-    if (!cols.includes('jsonl_content')) db.exec('ALTER TABLE sessions ADD COLUMN jsonl_content TEXT');
-    if (!cols.includes('summary_md'))    db.exec('ALTER TABLE sessions ADD COLUMN summary_md TEXT');
-    if (!cols.includes('file_hash'))     db.exec('ALTER TABLE sessions ADD COLUMN file_hash TEXT');
+    const colResult = db.exec('PRAGMA table_info(sessions)');
+    const cols = colResult.length > 0 ? colResult[0].values.map(r => r[1]) : [];
+    if (!cols.includes('jsonl_content')) db.run('ALTER TABLE sessions ADD COLUMN jsonl_content TEXT');
+    if (!cols.includes('summary_md'))    db.run('ALTER TABLE sessions ADD COLUMN summary_md TEXT');
+    if (!cols.includes('file_hash'))     db.run('ALTER TABLE sessions ADD COLUMN file_hash TEXT');
 }
 
 // ── 最初のユーザーメッセージを取得 ───────────────────────
@@ -51,7 +62,9 @@ function extractFirstMessage(lines) {
                 const text = msg.content.find(c => c.type === 'text')?.text?.trim();
                 if (text) return text;
             }
-        } catch {}
+        } catch (e) {
+            console.warn(`行パース失敗（スキップ）: ${line.substring(0, 80)}`);
+        }
     }
     return '';
 }
@@ -81,25 +94,23 @@ function buildSummary(jsonlPath, dateStr, lines) {
             else if (Array.isArray(msg.content))
                 text = msg.content.filter(c => c.type === 'text').map(c => c.text).join('');
             if (text.trim()) { parts.push(`### [${role}]`); parts.push(text.trim()); parts.push(''); }
-        } catch {}
+        } catch (e) {
+            console.warn(`サマリー生成スキップ: ${line.substring(0, 80)}`);
+        }
     }
     return parts.join('\n');
 }
 
 // ── メイン ───────────────────────────────────────────────
-function main() {
+async function main() {
     if (!fs.existsSync(logsDir)) {
         console.log('ログディレクトリが存在しません:', logsDir);
         return;
     }
 
-    const db = new Database(dbPath);
+    const SQL = await initSqlJs();
+    const db = loadDb(SQL);
     ensureSchema(db);
-
-    const insert = db.prepare(`
-        INSERT INTO sessions (session_id, date, timestamp, jsonl_source, first_message, line_count, jsonl_content, summary_md, file_hash)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
 
     const jsonlFiles = fs.readdirSync(logsDir)
         .filter(f => f.endsWith('.jsonl'))
@@ -114,11 +125,14 @@ function main() {
         const hash = crypto.createHash('sha256').update(content).digest('hex');
 
         // 重複チェック
-        const exists = db.prepare('SELECT id FROM sessions WHERE file_hash = ?').get(hash);
+        const stmt = db.prepare('SELECT id FROM sessions WHERE file_hash = ?');
+        stmt.bind([hash]);
+        const exists = stmt.step();
+        stmt.free();
         if (exists) { skipped++; continue; }
 
         const lines = content.split('\n').filter(Boolean);
-        const basename = path.basename(filePath); // 20260325_181025_<sessionId>.jsonl
+        const basename = path.basename(filePath);
         const parts = basename.split('_');
         const timestamp = parts.length >= 2 ? `${parts[0]}_${parts[1]}` : parts[0];
         const date = timestamp.substring(0, 8);
@@ -127,10 +141,15 @@ function main() {
         const firstMessage = extractFirstMessage(lines);
         const summaryMd = buildSummary(filePath, timestamp, lines);
 
-        insert.run(sessionId, date, timestamp, filePath, firstMessage.substring(0, 200), lines.length, content, summaryMd, hash);
+        db.run(
+            `INSERT INTO sessions (session_id, date, timestamp, jsonl_source, first_message, line_count, jsonl_content, summary_md, file_hash)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [sessionId, date, timestamp, filePath, firstMessage.substring(0, 200), lines.length, content, summaryMd, hash]
+        );
         inserted++;
     }
 
+    saveDb(db);
     db.close();
 
     console.log(`移行完了: ${inserted} 件挿入, ${skipped} 件スキップ（重複）`);
@@ -157,4 +176,4 @@ function main() {
     }
 }
 
-main();
+main().catch(e => { console.error(e); process.exit(1); });

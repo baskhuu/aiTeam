@@ -20,7 +20,7 @@
     "migrate-logs": "node .ai/scripts/migrate-logs.js"
   },
   "dependencies": {
-    "better-sqlite3": "^12.8.0"
+    "sql.js": "^1.12.0"
   },
   "repository": {
     "type": "git",
