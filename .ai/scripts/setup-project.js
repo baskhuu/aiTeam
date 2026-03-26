@@ -98,5 +98,5 @@ console.log('次のステップ:');
 console.log('  1. npm install          # better-sqlite3 をインストール');
 console.log('  2. CLAUDE.md を編集     # プロジェクト名・チーム構成を更新');
 console.log('  3. Claude Code CLI の Stop hook を設定:');
-console.log('       設定 > Hooks > Stop > powershell -File .ai/scripts/sync-logs.ps1');
-console.log('     ※ または claude settings で手動設定');
+console.log('       .claude/settings.json の hooks.Stop に以下を追加:');
+console.log('       { "type": "command", "command": "node .ai/scripts/sync-logs.js" }');
