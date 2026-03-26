@@ -119,6 +119,11 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 
 ---
 
+#### 0042 — Gemini決定事項の自動登録フロー確立（Claude）
+- `CLAUDE.md` に `[GEMINI_DECISION]` ブロック検知・自動実行ルールを追加
+- `copilot-instructions.md` にGemini向け出力フォーマットを定義
+- TLは貼り付けるだけ、コマンド不要のフローが完成
+
 #### 0041 — Gemini決定事項ログ機能の実装（Claude）
 - `.ai/scripts/gemini-log.js` 新規作成
 - `npm run gemini-log` コマンド追加（`package.json`）

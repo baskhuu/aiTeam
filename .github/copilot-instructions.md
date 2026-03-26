@@ -64,3 +64,13 @@
 - 承認ルール（厳守）
   - スクリプト・設定・ドキュメント問わず、全ファイルの変更は実行前に必ず {GitUser} (TL) に確認すること
   - TLの承認なしにいかなるファイルも変更・コミット・pushしないこと
+
+- Gemini決定事項の出力フォーマット（厳守）
+  - TLが承認した決定事項をClaude Code CLIに伝える際は、必ず以下の形式を使うこと:
+    ```
+    [GEMINI_DECISION]
+    category: <approval|architecture|version|rule>
+    content: <決定内容>
+    status: approved
+    ```
+  - このブロックをTLがClaude Code CLIのチャットに貼ることで、DBへの自動登録が行われる
