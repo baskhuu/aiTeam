@@ -113,6 +113,17 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 10. **セッションログ管理**: `.ai/aiteam.db`（SQLite）に保存・gitignore対象
 11. **ログ同期**: `npm run sync`（`sync-logs.js` → SQLite保存、gitコミットなし）
 12. **TL表記**: ドキュメント内は `{TL}` / `{GitUser}` プレースホルダーを使用（固有名を書かない）
+13. **Gemini決定事項の記録**: `npm run gemini-log -- --category <種別> --content <内容>` でSQLiteに記録
+    - 種別: `approval`（承認）/ `architecture`（設計）/ `version`（バージョン）/ `rule`（ルール）
+    - `approval` / `architecture` / `rule` は `AITEAM_HISTORY.md` にも自動追記
+
+---
+
+#### 0041 — Gemini決定事項ログ機能の実装（Claude）
+- `.ai/scripts/gemini-log.js` 新規作成
+- `npm run gemini-log` コマンド追加（`package.json`）
+- `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
+- Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
 
 ---
 

@@ -45,6 +45,16 @@ function initDb(db) {
             created_at   TEXT DEFAULT (datetime('now', 'localtime'))
         )
     `);
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS gemini_decisions (
+            id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+            category           TEXT,
+            content            TEXT,
+            status             TEXT DEFAULT 'approved',
+            created_at         TEXT DEFAULT (datetime('now', 'localtime')),
+            implemented_commit TEXT
+        )
+    `);
 }
 
 // ── JSONLをパースして最初のユーザーメッセージを取得 ────────

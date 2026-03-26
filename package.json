@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "AI team collaboration tool",
   "scripts": {
-    "sync": "node .ai/scripts/sync-logs.js"
+    "sync": "node .ai/scripts/sync-logs.js",
+    "gemini-log": "node .ai/scripts/gemini-log.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0"
