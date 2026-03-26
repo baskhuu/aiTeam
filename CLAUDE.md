@@ -14,7 +14,7 @@ aiTeamは、Claude・Gemini・TLの3者チームでソフトウェア開発を
 - 知識ベース: AITEAM_HISTORY.md
 
 ## コミットメッセージ規則（厳守）
-形式: [[担当名]] [内容]
+形式: [担当名] 内容
 例:
   [{GitUser}] 初期リポジトリ構成
   [Claude] .gitignore修正

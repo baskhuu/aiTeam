@@ -22,7 +22,7 @@ AIと人間が協調して開発を進めるためのチーム開発支援ツー
 - `.ai/scripts/setup-project.js`: 他プロジェクトへの導入セットアップCLI
 - `.ai/AITEAM_HISTORY.md`: プロジェクト開発履歴（重要な変更・決定事項のみ）
 - `.ai/aiteam.db`: セッションログDB（SQLite・gitignore対象）
-- `package.json`: npm設定（better-sqlite3依存）
+- `package.json`: npm設定（sql.js依存）
 - `.gitignore`: 非公開ファイルの除外設定
 - `LICENSE`: MITライセンス
 
@@ -32,14 +32,15 @@ AIと人間が協調して開発を進めるためのチーム開発支援ツー
 
 ```bash
 npx github:baskhuu/aiTeam
-npm install
 ```
 
 以下が自動でセットアップされます：
-- `CLAUDE.md` / スクリプト群 / `copilot-instructions.md` のコピー
-- `package.json` に `sync` / `gemini-log` / `migrate-logs` スクリプト追加
+- `CLAUDE.md` / `copilot-instructions.md` — 新規セクションのみ追記（既存内容は保持）
+- スクリプト群（`sync-logs.js` / `gemini-log.js` / `migrate-logs.js`）をコピー
+- `package.json` に `sync` / `gemini-log` / `migrate-logs` スクリプトと `sql.js` 依存を追加
 - `.gitignore` に aiTeam 除外ルール追記
 - `.ai/logs/` ディレクトリ作成
+- `node_modules` が存在しない場合は `npm install` を自動実行
 
 ## セットアップ後の設定
 
