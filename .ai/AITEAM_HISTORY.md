@@ -119,6 +119,15 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 
 ---
 
+#### 0043 — ログのSQLite一元管理への移行（Claude）
+- `sync-logs.js` をDB保存専用に変更（ファイル書き出し廃止）
+  - `jsonl_content` / `summary_md` / `file_hash` カラムを sessions テーブルに追加
+  - SHA256ハッシュによる重複取込み防止
+- `migrate-logs.js` 新規作成（既存ファイルのDB移行・削除ツール）
+- 既存ログ162ファイル（JSONL 81件 + MD 81件）をDBに移行後、削除
+- `package.json` に `migrate-logs` スクリプト追加
+- `aiteam.db` 1ファイルで全履歴を持ち運び可能になった
+
 #### 0042 — Gemini決定事項の自動登録フロー確立（Claude）
 - `CLAUDE.md` に `[GEMINI_DECISION]` ブロック検知・自動実行ルールを追加
 - `copilot-instructions.md` にGemini向け出力フォーマットを定義
