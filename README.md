@@ -17,8 +17,11 @@ AIと人間が協調して開発を進めるためのチーム開発支援ツー
 
 ## ファイル構成
 - `.github/copilot-instructions.md`: AIエージェント共通規約
-- `.ai/scripts/sync-logs.ps1`: JSONLログの自動同期スクリプト
-- `.ai/AITEAM_HISTORY.md`: プロジェクト開発履歴
+- `.ai/scripts/sync-logs.js`: ログ同期・SQLite保存スクリプト（Node.js）
+- `.ai/scripts/sync-logs.ps1`: Stop hookエントリポイント（`npm run sync` を呼ぶ）
+- `.ai/AITEAM_HISTORY.md`: プロジェクト開発履歴（重要な変更・決定事項のみ）
+- `.ai/aiteam.db`: セッションログDB（SQLite・gitignore対象）
+- `package.json`: npm設定（better-sqlite3依存）
 - `.gitignore`: 非公開ファイルの除外設定
 - `LICENSE`: MITライセンス
 
@@ -26,6 +29,7 @@ AIと人間が協調して開発を進めるためのチーム開発支援ツー
 ```bash
 git clone https://github.com/baskhuu/aiTeam.git
 cd aiTeam
+npm install
 ```
 
 ## 作業開始手順
