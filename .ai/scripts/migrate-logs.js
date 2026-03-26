@@ -1,7 +1,7 @@
 // migrate-logs.js
 // 役割: .ai/logs/claude_cli/ の既存ファイルを aiteam.db に一括移行する（1回限り）
 // 使い方: npm run migrate-logs
-//         npm run migrate-logs -- --delete  ← 移行後にファイルを削除
+//         npm run migrate-logs -- --delete --confirm  ← 移行後にファイルを削除（--confirm 必須）
 
 const Database = require('better-sqlite3');
 const fs = require('fs');
@@ -12,7 +12,8 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const dbPath   = path.join(repoRoot, '.ai', 'aiteam.db');
 const logsDir  = path.join(repoRoot, '.ai', 'logs', 'claude_cli');
 
-const doDelete = process.argv.includes('--delete');
+const doDelete  = process.argv.includes('--delete');
+const doConfirm = process.argv.includes('--confirm');
 
 // ── スキーマ確保 ──────────────────────────────────────────
 function ensureSchema(db) {
@@ -136,6 +137,15 @@ function main() {
 
     if (doDelete) {
         const allFiles = fs.readdirSync(logsDir);
+        if (!doConfirm) {
+            console.log('');
+            console.log('以下のファイルを削除します:');
+            allFiles.forEach(f => console.log(' ', f));
+            console.log('');
+            console.log('実行するには --confirm を追加してください:');
+            console.log('  npm run migrate-logs -- --delete --confirm');
+            return;
+        }
         let deleted = 0;
         for (const f of allFiles) {
             fs.unlinkSync(path.join(logsDir, f));
@@ -143,7 +153,7 @@ function main() {
         }
         console.log(`旧ファイル削除: ${deleted} 件`);
     } else {
-        console.log('ファイルは保持されています。削除するには --delete オプションを使用してください');
+        console.log('ファイルは保持されています。削除するには --delete --confirm オプションを使用してください');
     }
 }
 

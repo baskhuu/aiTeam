@@ -92,6 +92,12 @@ status: <approved/pending>  ← 省略時は approved
 - 種別: `approval`（承認）/ `architecture`（設計）/ `version`（バージョン）/ `rule`（ルール）
 - `approval` / `architecture` / `rule` は AITEAM_HISTORY.md にも自動追記される
 
+手動実行する場合のコマンド形式:
+```
+npm run gemini-log -- --category <種別> --content "<内容>" [--status <approved|pending>]
+npm run gemini-log -- --list
+```
+
 ## 注意事項
 - .ai/logs/ フォルダは作成するが中身はコミットしない
 - .ai/AITEAM_HISTORY.md は必ずコミット対象にする

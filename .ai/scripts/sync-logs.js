@@ -26,7 +26,7 @@ function findLatestJsonl() {
         }
     }
     walk(claudeProjectsDir);
-    files.sort((a, b) => b.mtime - a.mtime);
+    files.sort((a, b) => b.mtime - a.mtime || b.path.localeCompare(a.path));
     return files[0]?.path || null;
 }
 

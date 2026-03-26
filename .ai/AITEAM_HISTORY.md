@@ -140,6 +140,11 @@ aiTeamプロジェクトの開発履歴・決定事項の記録
 - `gemini_decisions` テーブルを SQLite に追加（`sync-logs.js` の `initDb` にも反映）
 - Gemini監査提案（カテゴリ管理・コミットハッシュリンク・AITEAM_HISTORY自動追記）を採用
 
+#### 0045 — スクリプト【中】問題3件修正（Claude）
+- `migrate-logs.js`: `--delete` 実行に `--confirm` フラグが必須となり誤削除防止
+- `sync-logs.js`: mtime 同一時のソートを `localeCompare` で安定化（並列セッション対応）
+- `CLAUDE.md`: `gemini-log` の手動実行コマンド形式を追記（`--category` / `--content` オプション）
+
 #### 0044 — スクリプト【高】バグ3件修正（Claude）
 - `sync-logs.js`: `catch{}` → `catch(e)` に変更し、パース失敗行を警告表示（ログロス防止）
 - `gemini-log.js`: `appendToHistory()` でTODOセクション直前に挿入するよう修正（`marker`変数を実際に使用）
